@@ -1,127 +1,66 @@
-import math
-from sakura import othello
+# Generation ID: Hutch_1764573066298_p4xlv2i9c (前半)
 
-BLACK = 1
-WHITE = 2
+def myai(board, color):
+    """
+    オセロの最適な置き手を返す関数
 
-# -------------------------
-# 評価関数：位置の重み + 石数
-# -------------------------
-WEIGHTS = [
-    [100, -20, 10, 10, -20, 100],
-    [-20, -50, -2, -2, -50, -20],
-    [10,  -2,  0,  0,  -2,  10],
-    [10,  -2,  0,  0,  -2,  10],
-    [-20, -50, -2, -2, -50, -20],
-    [100, -20, 10, 10, -20, 100]
-]
+    Args:
+        board: 2次元配列(6x6または8x8)
+        color: 置く色(1=BLACK, 2=WHITE)
 
-def evaluate(board, player):
-    opp = BLACK if player == WHITE else WHITE
-    score = 0
+    Returns:
+        (column, row): 最も多くの石が取れる位置
+    """
 
-    for y in range(6):
-        for x in range(6):
-            if board[y][x] == player:
-                score += WEIGHTS[y][x]
-            elif board[y][x] == opp:
-                score -= WEIGHTS[y][x]
+    BLACK = 1
+    WHITE = 2
+    opponent_color = WHITE if color == BLACK else BLACK
 
-    return score
+    rows = len(board)
+    cols = len(board[0])
 
-# -------------------------
-# Minimax + αβ
-# -------------------------
-def minimax(board, depth, player, maximizing, alpha, beta):
-    moves = othello.legal_moves(board, player)
-    opp = BLACK if player == WHITE else WHITE
+    # 8方向(上下左右と斜め)
+    directions = [(-1, 0), (1, 0), (0, -1), (0, 1),
+                  (-1, -1), (-1, 1), (1, -1), (1, 1)]
 
-    if depth == 0 or not moves:
-        return evaluate(board, player), None
+    def count_flips(row, col, direction):
+        """指定方向でひっくり返せる石の数"""
+        if board[row][col] != 0:
+            return 0
 
-    best_move = None
+        dr, dc = direction
+        flips = 0
+        r, c = row + dr, col + dc
 
-    if maximizing:
-        max_eval = -math.inf
-        for move in moves:
-            new_board = othello.copy_board(board)
-            othello.put_and_reverse(new_board, player, move)
+        while 0 <= r < rows and 0 <= c < cols:
+            if board[r][c] == 0:
+                return 0
+            if board[r][c] == color:
+                return flips
+            flips += 1
+            r += dr
+            c += dc
 
-            eval, _ = minimax(new_board, depth - 1, opp, False, alpha, beta)
-            if eval > max_eval:
-                max_eval = eval
-                best_move = move
+        return 0
 
-            alpha = max(alpha, eval)
-            if beta <= alpha:
-                break
+    def get_total_flips(row, col):
+        """指定位置で取れる石の総数"""
+        total = 0
+        for direction in directions:
+            total += count_flips(row, col, direction)
+        return total
 
-        return max_eval, best_move
+    best_position = None
+    max_flips = -1
 
-    else:
-        min_eval = math.inf
-        for move in moves:
-            new_board = othello.copy_board(board)
-            othello.put_and_reverse(new_board, player, move)
+    for row in range(rows):
+        for col in range(cols):
+            if board[row][col] == 0:
+                flips = get_total_flips(row, col)
+                if flips > 0 and flips > max_flips:
+                    max_flips = flips
+                    best_position = (col, row)
 
-            eval, _ = minimax(new_board, depth - 1, opp, True, alpha, beta)
-            if eval < min_eval:
-                min_eval = eval
-                best_move = move
+    return best_position if best_position else (0, 0)
 
-            beta = min(beta, eval)
-            if beta <= alpha:
-                break
-
-        return min_eval, best_move
-
-# -------------------------
-# AI のプレイヤー
-# -------------------------
-def myai(board, player):
-    # AIのターンの処理をここで行います
-    _, move = minimax(board, depth=4, player=player, maximizing=True, alpha=-math.inf, beta=math.inf)
-    return move
-
-# -------------------------
-# 対戦用ラッパー
-# -------------------------
-def play_vs_strong_ai():
-    board = othello.init_board()
-    current = BLACK
-
-    while True:
-        print("\n=== Current Board ===")
-        othello.print_board(board)
-
-        moves = othello.legal_moves(board, current)
-        if not moves:
-            print("No moves. Turn skipped.")
-            current = WHITE if current == BLACK else BLACK
-            continue
-
-        if current == BLACK:
-            # 人間のターン
-            print("Your turn (BLACK)")
-            print("Legal moves:", moves)
-            x, y = map(int, input("x y ? ").split())
-            if (x, y) not in moves:
-                print("Illegal move.")
-                continue
-            othello.put_and_reverse(board, current, (x, y))
-
-        else:
-            # AI のターン
-            print("AI thinking…")
-            move = myai(board, WHITE)
-            print("AI move:", move)
-            othello.put_and_reverse(board, WHITE, move)
-
-        current = WHITE if current == BLACK else BLACK
-
-# この関数を使ってAIと対戦できるように変更しました。
-# AIのロジックを `myai` にまとめて、`othello.play(myai)` で呼び出せるようにしています。
-
-# ここで対戦を開始する
-#if __name__ == "__main__":
- #   othello.play(myai)
+# Generation ID: Hutch_1764573066298_p4xlv2i9c (後半)
